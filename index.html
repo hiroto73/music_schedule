@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日程調整アプリ Modern Light</title>
+    <style>
+        /* --- UI改善: カラーテーマ再設計 & モダンデザイン --- */
+        :root {
+            --bg-color: #ffffff; /* 白基調 */
+            --surface-color: #ffffff; /* カードなどの表面色 */
+            --text-color: #212529; /* ダークグレーテキスト */
+            --text-muted-color: #6c757d; /* やや薄いグレーテキスト */
+            --border-color: #dee2e6; /* 明るいグレー境界線 */
+            
+            --gradient-start: #a0d8ef; /* 水色 */
+            --gradient-end: #bfa3f3;   /* 紫 */
+            
+            --primary-text-on-gradient: #ffffff; /* グラデーション上のテキスト色 */
+
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            
+            --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            --border-radius: 0.375rem; /* 6px */
+            --spacing-unit: 1rem; /* 16px */
+            --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --box-shadow-lg: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+        }
+
+        /* 基本スタイルリセットと設定 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body { 
+            font-family: var(--font-family-sans-serif);
+            margin: 0; 
+            padding: 0; 
+            background-color: #f8f9fa; /* 全体の背景をわずかにグレーに */
+            color: var(--text-color); 
+            font-size: 16px;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .app-wrapper {
+            width: 100%;
+            max-width: 1200px; 
+            margin: 0 auto;
+            padding: calc(var(--spacing-unit) * 1.5);
+            flex-grow: 1;
+        }
+
+        .container { 
+            background-color: var(--surface-color); 
+            padding: calc(var(--spacing-unit) * 1.5); 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--box-shadow); 
+            margin-bottom: calc(var(--spacing-unit) * 1.5);
+            border: 1px solid var(--border-color);
+        }
+        h1, h2, h3, h4 { 
+            color: var(--text-color); 
+            margin-top: 0; 
+            margin-bottom: var(--spacing-unit);
+            line-height: 1.3;
+            font-weight: 500;
+        }
+        h1 { font-size: 2em; background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.75em; }
+        h3 { font-size: 1.5em; }
+        h4 { font-size: 1.25em; color: var(--text-muted-color); }
+
+
+        label {
+            display: block;
+            margin-bottom: calc(var(--spacing-unit) * 0.4);
+            font-weight: 500;
+            color: var(--text-muted-color);
+            font-size: 0.9rem;
+        }
+        input[type="text"], 
+        input[type="password"], 
+        input[type="date"], 
+        select {
+            width: 100%;
+            padding: calc(var(--spacing-unit) * 0.75);
+            margin-bottom: var(--spacing-unit);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            background-color: var(--surface-color); 
+            color: var(--text-color);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        input[type="text"]:focus, 
+        input[type="password"]:focus, 
+        input[type="date"]:focus, 
+        select:focus {
+            outline: none;
+            border-color: var(--gradient-start); /* フォーカス時はグラデーションの開始色 */
+            box-shadow: 0 0 0 0.2rem rgba(160, 216, 239, 0.35); /* var(--gradient-start) の透明度調整 */
+        }
+        input::placeholder {
+            color: #adb5bd; /* プレースホルダーの色を調整 */
+            opacity: 1;
+        }
+        /* input[type="date"]::-webkit-calendar-picker-indicator { filter: initial; } */
+
+
+        button {
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            color: var(--primary-text-on-gradient); 
+            padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+            border: none; 
+            border-radius: var(--border-radius); 
+            cursor: pointer; 
+            font-size: 1rem;
+            font-weight: 500;
+            transition: filter 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            gap: calc(var(--spacing-unit) * 0.5);
+            box-shadow: var(--box-shadow);
+        }
+        button:hover { 
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1);
+        }
+        button:active {
+            transform: translateY(0);
+            filter: brightness(0.95);
+        }
+        button.secondary { 
+            background: var(--surface-color);
+            color: var(--text-muted-color);
+            border: 1px solid var(--border-color);
+        }
+        button.secondary:hover { 
+            background: #e9ecef; /* 少し濃い白系 */
+            color: var(--text-color);
+            filter: none;
+            border-color: #ced4da;
+        }
+        button.danger { 
+            background: var(--danger-color); 
+            color: white;
+        }
+        button.danger:hover { filter: brightness(1.1); background: var(--danger-color); }
+
+
+        .hidden { display: none !important; }
+
+        /* ヘッダーとハンバーガーメニュー */
+        #main-app-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: calc(var(--spacing-unit) * 1.5); 
+            flex-wrap: wrap;
+            padding-bottom: var(--spacing-unit);
+            border-bottom: 1px solid var(--border-color);
+        }
+        #main-app-header h2 {
+            margin-bottom: 0; 
+            font-size: 1.5em; 
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        #hamburger-menu { 
+            font-size: 1.8rem; 
+            cursor: pointer; 
+            padding: calc(var(--spacing-unit) * 0.5);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s ease;
+            color: var(--text-muted-color);
+        }
+        #hamburger-menu:hover {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-color);
+        }
+        #menu-dropdown {
+            position: absolute; 
+            top: 75px; 
+            right: calc(var(--spacing-unit) * 1.5); 
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color); 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--box-shadow-lg);
+            z-index: 1000; 
+            padding: var(--spacing-unit);
+            width: 250px;
+            /* visibility & animation handled by .hidden and .show (JS) */
+        }
+        #menu-dropdown.show { /* JSでこのクラスをトグル */
+            display: block; /* display:none解除 */
+            /* JSで animation class をつけても良い */
+        }
+        #menu-dropdown button { 
+            display: block; 
+            width: 100%; 
+            text-align: left; 
+            margin-bottom: calc(var(--spacing-unit) * 0.5);
+            background: transparent;
+            color: var(--text-color);
+            padding: calc(var(--spacing-unit) * 0.75);
+            box-shadow: none;
+        }
+        #menu-dropdown button:hover {
+            background-color: #f8f9fa; /* 薄いグレー */
+            color: var(--text-color);
+            filter: none;
+            transform: none;
+        }
+        #menu-dropdown button:last-child {
+            margin-bottom: 0;
+        }
+        #menu-dropdown button.danger { background-color: transparent; color: var(--danger-color); }
+        #menu-dropdown button.danger:hover { background-color: var(--danger-color); color: white; }
+
+
+        #add-song-btn {
+            position: fixed; 
+            bottom: calc(var(--spacing-unit) * 1.5);
+            right: calc(var(--spacing-unit) * 1.5);
+            width: 56px; 
+            height: 56px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); /*角度変更*/
+            color: var(--primary-text-on-gradient); 
+            border-radius: 50%;
+            font-size: 1.75rem;
+            line-height: 56px; 
+            text-align: center; 
+            cursor: pointer; 
+            box-shadow: 0 0.25rem 1rem rgba(0,0,0,0.15);
+            z-index: 999;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        #add-song-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.2);
+            filter: brightness(1.05);
+        }
+
+        /* テーブル */
+        #availability-table-wrapper {
+            overflow: auto; 
+            max-height: 70vh; 
+            margin-top: calc(var(--spacing-unit) * 1.5);
+            margin-bottom: calc(var(--spacing-unit) * 1.5);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            position: relative; 
+            background-color: var(--surface-color);
+        }
+        #availability-table { 
+            width: 100%; 
+            min-width: 800px; 
+            border-collapse: separate; 
+            border-spacing: 0;
+        }
+        #availability-table th, 
+        #availability-table td {
+            border-bottom: 1px solid var(--border-color); 
+            border-right: 1px solid var(--border-color); 
+            padding: calc(var(--spacing-unit) * 0.6); /* 少し詰める */
+            text-align: center; 
+            font-size: 0.875rem; /* 14px */
+            min-width: 90px; 
+            white-space: nowrap;
+        }
+        #availability-table th:first-child, 
+        #availability-table td:first-child { border-left: none; }
+        #availability-table tr:first-child th { border-top: none; }
+         #availability-table tr td:last-child,
+         #availability-table tr th:last-child { border-right: none; }
+        #availability-table tr:last-child td { border-bottom: none; }
+
+
+        #availability-table thead th { 
+            background-color: #f8f9fa; /* ヘッダー背景 */
+            color: var(--text-color);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2; 
+            border-bottom: 2px solid var(--gradient-start); /* グラデーション開始色でアクセント */
+        }
+        #availability-table tbody th, 
+        #availability-table tbody td:first-child { 
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            font-weight: 600;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            border-right: 2px solid var(--gradient-start);
+        }
+        #availability-table thead th:first-child {
+            z-index: 3 !important; 
+            left: 0;
+            border-right: 2px solid var(--gradient-start);
+        }
+
+        .available-slot { background-color: #e6f7ff; cursor: pointer; } /* 薄い水色 */
+        .available-slot:hover { background-color: #d0ebf7; }
+        .unavailable-slot { background-color: transparent; cursor: pointer; }
+        .unavailable-slot:hover { background-color: #f8f9fa; } /* わずかにグレー */
+        
+        .confirmed-slot { 
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end)) !important; 
+            color: var(--primary-text-on-gradient) !important; 
+            font-weight: bold; 
+        }
+        .confirmed-slot .slot-actions { color: var(--primary-text-on-gradient) !important; text-decoration-color: var(--primary-text-on-gradient) !important;}
+        .confirmed-slot .participant-count { color: rgba(255,255,255,0.9) !important; }
+
+
+        .slot-actions { 
+            font-size: 0.8em; 
+            cursor: pointer; 
+            color: var(--gradient-end); /* グラデーション終了色 */
+            display: block; 
+            margin-top: calc(var(--spacing-unit) * 0.25);
+            text-decoration: underline;
+            text-decoration-color: var(--gradient-end);
+        }
+        .slot-actions:hover { color: var(--gradient-start); text-decoration-color: var(--gradient-start);}
+        .participant-count { 
+            font-size: 0.75em; 
+            color: var(--text-muted-color); 
+            display: block; 
+            margin-top: calc(var(--spacing-unit) * 0.15);
+        }
+        
+        /* モーダル */
+        .modal {
+            position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.4); /* 背景を少し薄く */
+            display: flex; /* JS で .show をトグルして表示 */
+            align-items: center; justify-content: center;
+            padding: var(--spacing-unit);
+        }
+        .modal.show { display: flex; } /* JSがこのクラスを追加して表示 */
+
+        .modal-content { 
+            background-color: var(--surface-color); 
+            margin: auto; 
+            padding: calc(var(--spacing-unit) * 1.5);
+            border: 1px solid var(--border-color); 
+            width: 100%;
+            max-width: 500px; 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--box-shadow-lg);
+            position: relative;
+        }
+        .close-modal { 
+            position: absolute;
+            top: calc(var(--spacing-unit) * 0.5);
+            right: calc(var(--spacing-unit) * 0.75);
+            color: var(--text-muted-color); 
+            font-size: 1.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            line-height: 1;
+            padding: calc(var(--spacing-unit) * 0.25) calc(var(--spacing-unit) * 0.5);
+            background: none;
+            border: none;
+        }
+        .close-modal:hover { color: var(--text-color); }
+
+        .equipment-selection label { display: flex; align-items:center; margin-bottom: calc(var(--spacing-unit) * 0.5); font-size: 1rem; color: var(--text-color); font-weight: normal;}
+        .equipment-selection input[type="checkbox"] {
+            margin-right: calc(var(--spacing-unit) * 0.5);
+            width: auto; 
+            height: 1em; width: 1em; /* サイズ統一 */
+            vertical-align: middle;
+            accent-color: var(--gradient-start); 
+        }
+
+        .message-area { /* 汎用メッセージ表示エリア用クラス */
+             padding: var(--spacing-unit);
+             margin-bottom: var(--spacing-unit);
+             border-radius: var(--border-radius);
+             font-weight: 500;
+             border-width: 1px;
+             border-style: solid;
+        }
+        .error-message { /* エラーメッセージの具体的なスタイル */
+            color: var(--danger-color); 
+            background-color: #f8d7da; /* 薄い赤 */
+            border-color: #f5c2c7; /* 少し濃い赤 */
+        }
+        .info-message { /* 情報メッセージの具体的なスタイル */
+            color: var(--success-color); 
+            background-color: #d1e7dd; /* 薄い緑 */
+            border-color: #badbcc; /* 少し濃い緑 */
+        }
+
+        .page { margin-bottom: calc(var(--spacing-unit) * 1.5); }
+        hr { margin-top: calc(var(--spacing-unit) * 1.5); margin-bottom: calc(var(--spacing-unit) * 1.5); border: 0; border-top: 1px solid var(--border-color); }
+
+        #song-list ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #song-list li {
+            background-color: var(--surface-color); 
+            padding: var(--spacing-unit);
+            margin-bottom: var(--spacing-unit);
+            border-radius: var(--border-radius);
+            border-left: 5px solid var(--gradient-start); /* グラデーション開始色でアクセント */
+            transition: box-shadow 0.2s ease;
+            box-shadow: var(--box-shadow);
+        }
+        #song-list li:hover {
+            box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1);
+        }
+        #song-list strong {
+            font-size: 1.15em;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        #song-list small {
+            color: var(--text-muted-color);
+            display: block;
+            margin-top: calc(var(--spacing-unit) * 0.25);
+        }
+        #song-list a {
+            color: var(--gradient-end); /* グラデーション終了色 */
+            text-decoration: none;
+            font-weight: 500;
+        }
+        #song-list a:hover {
+            text-decoration: underline;
+            filter: brightness(1.2);
+        }
+        #song-list button.delete-song-btn {
+            padding: calc(var(--spacing-unit) * 0.4) calc(var(--spacing-unit) * 0.8);
+            font-size: 0.8rem;
+            margin-left: var(--spacing-unit);
+        }
+
+        @media (max-width: 768px) {
+            .app-wrapper { padding: var(--spacing-unit); }
+            .container { padding: var(--spacing-unit); }
+            h1 { font-size: 1.75em; }
+            h2 { font-size: 1.4em; }
+            h3 { font-size: 1.2em; }
+
+            #main-app-header h2 { font-size: 1.2em; }
+            #menu-dropdown { width: calc(100% - (var(--spacing-unit) * 2)); max-width: 280px; top: 70px; }
+            
+            #add-song-btn { width: 50px; height: 50px; font-size: 1.5rem; line-height: 50px; }
+            
+            .modal-content { padding: var(--spacing-unit); max-width: calc(100% - (var(--spacing-unit) * 2)); }
+            
+            #availability-table { min-width: 600px; } 
+            #availability-table th, 
+            #availability-table td { padding: calc(var(--spacing-unit) * 0.5); font-size: 0.8rem; min-width: 80px; }
+        }
+        @media (max-width: 480px) {
+            h1 { font-size: 1.5em; }
+            h2 { font-size: 1.25em; }
+            h3 { font-size: 1.05em; }
+            #availability-table { min-width: 450px; }
+            #availability-table th, 
+            #availability-table td { padding: calc(var(--spacing-unit) * 0.4); font-size: 0.75rem; min-width: 70px;}
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div id="registration-page" class="container page">
+            <h2>ユーザー登録</h2>
+            <div id="reg-error-area" class="message-area error-message hidden"></div>
+            <label for="reg-login-id">ログインID</label>
+            <input type="text" id="reg-login-id" placeholder="例: user123" required>
+            <label for="reg-password">パスワード</label>
+            <input type="password" id="reg-password" placeholder="********" required>
+            <label for="reg-nickname">ニックネーム</label>
+            <input type="text" id="reg-nickname" placeholder="例: ギタリストTaro" required>
+            <label for="reg-circle-code">サークルコード</label>
+            <input type="text" id="reg-circle-code" placeholder="例: mybandcircle" required>
+            <button id="register-btn">登録する</button>
+            <hr>
+            <button id="show-login-page-btn" class="secondary">既に登録済みの方はこちら</button>
+        </div>
+
+        <div id="login-page" class="container page hidden">
+            <h2>ログイン</h2>
+            <div id="login-error-area" class="message-area error-message hidden"></div>
+            <label for="login-id">ログインID</label>
+            <input type="text" id="login-id" placeholder="ログインID" required>
+            <label for="login-password">パスワード</label>
+            <input type="password" id="login-password" placeholder="パスワード" required>
+            <label for="login-circle-code">サークルコード</label>
+            <input type="text" id="login-circle-code" placeholder="登録時のサークルコード" required>
+            <button id="login-btn">ログイン</button>
+            <hr>
+            <button id="show-registration-page-btn" class="secondary">新規登録の方はこちら</button>
+        </div>
+
+        <div id="main-app-page" class="page hidden">
+            <div id="main-app-header">
+                <h2 id="welcome-message">ようこそ、 <span id="user-nickname-display"></span> さん！ (サークル: <span id="user-circle-display"></span>)</h2>
+                <div id="hamburger-menu">≡</div>
+            </div>
+
+            <div id="menu-dropdown" class="hidden"> <button id="edit-user-info-btn">ユーザー情報編集</button>
+                <button id="logout-btn" class="danger">ログアウト</button>
+            </div>
+
+            <div id="main-message-area" class="message-area info-message hidden" style="margin-bottom: var(--spacing-unit);"></div>
+
+
+            <div id="edit-user-info-modal" class="modal hidden"> <div class="modal-content">
+                    <button class="close-modal" data-modal-id="edit-user-info-modal">&times;</button>
+                    <h3>ユーザー情報編集</h3>
+                    <div id="edit-user-info-error-area" class="message-area error-message hidden"></div>
+                    <label for="edit-nickname">ニックネーム:</label>
+                    <input type="text" id="edit-nickname">
+                    <label for="edit-circle-code">サークルコード: <small>(変更すると過去のサークルのデータとは別管理)</small></label>
+                    <input type="text" id="edit-circle-code">
+                    <button id="save-user-info-btn" style="margin-top: var(--spacing-unit);">保存</button>
+                </div>
+            </div>
+
+            <div id="song-management-page" class="container">
+                <h3>曲リスト・日程調整</h3>
+                <div id="song-list"></div>
+            </div>
+
+            <div id="add-song-btn" title="新しい曲の日程調整を作成">+</div>
+
+            <div id="create-song-modal" class="modal hidden"> <div class="modal-content">
+                    <button class="close-modal" data-modal-id="create-song-modal">&times;</button>
+                    <h3>新しい曲の日程調整を作成</h3>
+                    <div id="create-song-error-area" class="message-area error-message hidden"></div>
+                    <label for="song-name">曲名:</label>
+                    <input type="text" id="song-name" placeholder="曲名を入力">
+                    <label for="practice-period-start">練習期間（開始）:</label>
+                    <input type="date" id="practice-period-start">
+                    <label for="practice-period-end">練習期間（終了）:</label>
+                    <input type="date" id="practice-period-end">
+                    <button id="create-song-link-btn" style="margin-top: var(--spacing-unit);">作成</button>
+                    <div id="generated-link-area" class="hidden" style="margin-top: var(--spacing-unit);">
+                        <label>共有リンク:</label>
+                        <input type="text" id="generated-link" readonly style="background-color: #e9ecef; color: var(--text-color);">
+                        <button id="copy-link-btn" class="secondary" style="margin-top: calc(var(--spacing-unit) * 0.5);">コピー</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="availability-input-page" class="container page hidden">
+            <h2 id="availability-song-title"></h2>
+            <p id="availability-period" style="color:var(--text-muted-color); margin-bottom: var(--spacing-unit);"></p>
+            <div id="availability-message-area" class="message-area info-message hidden"></div>
+            <div id="availability-controls" style="margin-bottom: var(--spacing-unit); display: flex; gap: var(--spacing-unit); flex-wrap: wrap;">
+                <button id="show-confirm-schedule-btn" class="hidden secondary">練習コマを確定モードへ</button>
+                <button id="save-availability-btn">空きコマを保存</button>
+                <button id="edit-availability-btn" class="hidden secondary">空きコマを編集</button>
+            </div>
+            <div id="availability-table-wrapper">
+                <table id="availability-table">
+                    <thead><tr id="availability-table-header"></tr></thead>
+                    <tbody id="availability-table-body"></tbody>
+                </table>
+            </div>
+            <hr>
+            <button id="back-to-song-list-btn" class="secondary">曲リストに戻る</button>
+
+            <div id="participant-list-modal" class="modal hidden"> <div class="modal-content">
+                    <button class="close-modal" data-modal-id="participant-list-modal">&times;</button>
+                    <h3 id="participant-list-modal-title">参加可能な人</h3>
+                    <ul id="participant-list-ul" style="padding-left: var(--spacing-unit); max-height: 300px; overflow-y: auto;"></ul>
+                </div>
+            </div>
+
+            <div id="confirm-schedule-modal" class="modal hidden"> <div class="modal-content">
+                    <button class="close-modal" data-modal-id="confirm-schedule-modal">&times;</button>
+                    <h3 id="confirm-schedule-modal-title">練習コマを確定</h3>
+                    <div id="confirm-schedule-message-area" class="message-area error-message hidden"></div> <p>日時: <span id="confirm-slot-datetime" style="font-weight:bold;"></span></p>
+                    <h4 style="margin-top:var(--spacing-unit); margin-bottom: calc(var(--spacing-unit)*0.5);">使用機材 (在庫 各3)</h4>
+                    <div id="equipment-selection" class="equipment-selection"></div>
+                    <div id="confirmation-warnings" class="message-area error-message hidden" style="margin-top:var(--spacing-unit);"></div>
+                    <div style="margin-top: var(--spacing-unit); display:flex; gap: var(--spacing-unit);">
+                        <button id="confirm-schedule-action-btn">このコマを練習日に確定</button>
+                        <button id="unconfirm-schedule-action-btn" class="danger hidden">このコマの確定を解除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <script>
+        // 共有リンクは Webサーバー経由 (http:// or https://) でのアクセスを前提とします。
+        const APP_BASE_URL = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+
+        const EQUIPMENT_LIST = ["スプハイ", "キーボード", "ベーアン", "キューブアンプ"];
+        const EQUIPMENT_STOCK_LIMIT = 3;
+        const TIME_SLOTS = ["1限", "昼", "2限", "3限", "4限", "5限", "6限", "7限"];
+
+        // DOM Elements
+        const registrationPage = document.getElementById('registration-page');
+        const regLoginIdInput = document.getElementById('reg-login-id');
+        const regPasswordInput = document.getElementById('reg-password');
+        const regNicknameInput = document.getElementById('reg-nickname');
+        const regCircleCodeInput = document.getElementById('reg-circle-code');
+        const registerBtn = document.getElementById('register-btn');
+        const showLoginPageBtn = document.getElementById('show-login-page-btn');
+        const regErrorArea = document.getElementById('reg-error-area');
+
+        const loginPage = document.getElementById('login-page');
+        const loginIdInput = document.getElementById('login-id');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginCircleCodeInput = document.getElementById('login-circle-code');
+        const loginBtn = document.getElementById('login-btn');
+        const showRegistrationPageBtn = document.getElementById('show-registration-page-btn');
+        const loginErrorArea = document.getElementById('login-error-area');
+
+        const mainAppPage = document.getElementById('main-app-page');
+        const mainMessageArea = document.getElementById('main-message-area');
+        const userNicknameDisplay = document.getElementById('user-nickname-display');
+        const userCircleDisplay = document.getElementById('user-circle-display');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        const menuDropdown = document.getElementById('menu-dropdown');
+        const editUserInfoBtn = document.getElementById('edit-user-info-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        const editUserInfoModal = document.getElementById('edit-user-info-modal');
+        const editNicknameInput = document.getElementById('edit-nickname');
+        const editCircleCodeInput = document.getElementById('edit-circle-code');
+        const saveUserInfoBtn = document.getElementById('save-user-info-btn');
+        const editUserInfoErrorArea = document.getElementById('edit-user-info-error-area');
+
+        const songManagementPage = document.getElementById('song-management-page');
+        const songListDiv = document.getElementById('song-list');
+        const addSongBtn = document.getElementById('add-song-btn');
+
+        const createSongModal = document.getElementById('create-song-modal');
+        const songNameInput = document.getElementById('song-name');
+        const practicePeriodStartInput = document.getElementById('practice-period-start');
+        const practicePeriodEndInput = document.getElementById('practice-period-end');
+        const createSongLinkBtn = document.getElementById('create-song-link-btn');
+        const generatedLinkArea = document.getElementById('generated-link-area');
+        const generatedLinkInput = document.getElementById('generated-link');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const createSongErrorArea = document.getElementById('create-song-error-area');
+
+        const availabilityInputPage = document.getElementById('availability-input-page');
+        const availabilitySongTitle = document.getElementById('availability-song-title');
+        const availabilityPeriod = document.getElementById('availability-period');
+        const availabilityMessageArea = document.getElementById('availability-message-area');
+        const showConfirmScheduleBtn = document.getElementById('show-confirm-schedule-btn');
+        const availabilityTableBody = document.getElementById('availability-table-body');
+        const availabilityTableHeader = document.getElementById('availability-table-header');
+        const saveAvailabilityBtn = document.getElementById('save-availability-btn');
+        const editAvailabilityBtn = document.getElementById('edit-availability-btn');
+        const backToSongListBtn = document.getElementById('back-to-song-list-btn');
+
+        const participantListModal = document.getElementById('participant-list-modal');
+        const participantListModalTitle = document.getElementById('participant-list-modal-title');
+        const participantListUl = document.getElementById('participant-list-ul');
+
+        const confirmScheduleModal = document.getElementById('confirm-schedule-modal');
+        const confirmScheduleModalTitle = document.getElementById('confirm-schedule-modal-title');
+        const confirmSlotDatetime = document.getElementById('confirm-slot-datetime');
+        const equipmentSelectionDiv = document.getElementById('equipment-selection');
+        const confirmationWarningsDiv = document.getElementById('confirmation-warnings');
+        const confirmScheduleMessageArea = document.getElementById('confirm-schedule-message-area');
+        const confirmScheduleActionBtn = document.getElementById('confirm-schedule-action-btn');
+        const unconfirmScheduleActionBtn = document.getElementById('unconfirm-schedule-action-btn');
+
+        let currentUser = null;
+        let currentCircleData = null;
+        let currentSongName = null;
+        let currentSlotToConfirm = null;
+        let isConfirmMode = false;
+
+        // --- 機能改善: モーダルとドロップダウンの表示/非表示制御 ---
+        function showModal(modalElement) {
+            if(!modalElement) return;
+            modalElement.classList.remove('hidden'); // display:none を解除
+            // アニメーションのために少し遅延させるか、CSSで .show 時に display:flex を指定
+            requestAnimationFrame(() => { // これにより、display変更がDOMに反映されてから次の変更が適用される
+                 modalElement.classList.add('show'); 
+            });
+            const errorArea = modalElement.querySelector('.message-area.error-message, .message-area.info-message');
+            if (errorArea) errorArea.classList.add('hidden');
+        }
+
+        function hideModal(modalElement) {
+            if(!modalElement) return;
+            modalElement.classList.remove('show');
+            // アニメーション完了後に hidden を追加することもできるが、
+            // .show がなければ opacity 0, pointer-events none なので、多くの場合不要。
+            // 安全策として hidden を再度つける (display:none!important のため)
+             modalElement.classList.add('hidden');
+        }
+        
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const modalId = btn.dataset.modalId;
+                if(modalId) hideModal(document.getElementById(modalId));
+            }
+        });
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    hideModal(modal);
+                }
+            };
+        });
+
+        hamburgerMenu.onclick = () => {
+            if (menuDropdown.classList.contains('hidden')) {
+                menuDropdown.classList.remove('hidden');
+                requestAnimationFrame(() => menuDropdown.classList.add('show'));
+            } else {
+                menuDropdown.classList.remove('show');
+                // アニメーションを待つか、即座に隠すか
+                // setTimeout(() => menuDropdown.classList.add('hidden'), 200); // 200msはCSSのtransition durationに合わせる
+                menuDropdown.classList.add('hidden'); // 即時非表示で問題なければこちら
+            }
+        };
+        document.addEventListener('click', function(event) {
+            if (!menuDropdown.contains(event.target) && !hamburgerMenu.contains(event.target) && menuDropdown.classList.contains('show')) {
+                menuDropdown.classList.remove('show');
+                menuDropdown.classList.add('hidden');
+            }
+        });
+        
+        addSongBtn.onclick = () => {
+            clearForm(songNameInput, practicePeriodStartInput, practicePeriodEndInput);
+            generatedLinkArea.classList.add('hidden');
+            showModal(createSongModal);
+        };
+
+
+        // Storage functions (no change)
+        function getUserInfoFromStorage() {
+            const userInfoString = localStorage.getItem('scheduleAppUser');
+            return userInfoString ? JSON.parse(userInfoString) : null;
+        }
+        function saveUserInfoToStorage(userInfo) {
+            localStorage.setItem('scheduleAppUser', JSON.stringify(userInfo));
+        }
+        function getCircleDataFromStorage(circleCode) {
+            if (!circleCode) return { songs: {}, users: {}, equipmentStock: {} };
+            const dataString = localStorage.getItem(`scheduleAppCircle_${circleCode}`);
+            return dataString ? JSON.parse(dataString) : { songs: {}, users: {}, equipmentStock: {} };
+        }
+        function saveCircleDataToStorage(circleCode, data) {
+            if (!circleCode || !data) return;
+            localStorage.setItem(`scheduleAppCircle_${circleCode}`, JSON.stringify(data));
+        }
+
+        // UI Helper functions
+        function showPage(pageElement) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            if (pageElement) {
+                pageElement.classList.remove('hidden');
+                // ページ遷移時に汎用メッセージエリアをクリア
+                document.querySelectorAll('.message-area').forEach(msgArea => {
+                    msgArea.classList.add('hidden');
+                    msgArea.textContent = '';
+                });
+            }
+        }
+        // displayMessage: 各モーダル/ページに専用のエラー表示エリアを設ける
+        function displayMessage(message, type = 'error', targetErrorAreaElement = null) {
+            let targetArea = targetErrorAreaElement;
+
+            if (!targetArea) { // 対象エリアが指定されてなければ、現在表示中のページのエラーエリアを探す
+                 const currentPage = document.querySelector('.page:not(.hidden)');
+                 if(currentPage) targetArea = currentPage.querySelector('.message-area');
+            }
+            
+            if (targetArea) {
+                targetArea.textContent = message;
+                targetArea.classList.remove('hidden', 'error-message', 'info-message'); // 一旦クラスをリセット
+                if (type === 'error') {
+                    targetArea.classList.add('error-message');
+                } else {
+                    targetArea.classList.add('info-message');
+                     if(targetArea !== mainMessageArea && targetArea !== availabilityMessageArea) { // グローバルなメッセージエリア以外は数秒で消す
+                        setTimeout(() => { targetArea.classList.add('hidden'); }, 4000);
+                     }
+                }
+            } else {
+                alert(`${type === 'error' ? 'エラー: ' : '情報: '}${message}`); // Ultimate fallback
+            }
+        }
+
+        function clearForm(...inputs) {
+            inputs.forEach(input => { if(input) input.value = ''; });
+        }
+
+        // Auth functions (logic largely same, calls displayMessage with target area)
+        function handleInitialLoad() {
+            currentUser = getUserInfoFromStorage();
+            const urlParams = new URLSearchParams(window.location.search);
+            const songParam = urlParams.get('song');
+            const circleParam = urlParams.get('circle');
+
+            if (currentUser) {
+                currentCircleData = getCircleDataFromStorage(currentUser.circleCode);
+                if (!currentCircleData.users[currentUser.loginId]) {
+                    currentCircleData.users[currentUser.loginId] = { nickname: currentUser.nickname, password: currentUser.password };
+                    saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+                }
+                if (songParam && circleParam && circleParam === currentUser.circleCode) {
+                    currentSongName = decodeURIComponent(songParam);
+                    if (currentCircleData.songs && currentCircleData.songs[currentSongName]) {
+                        loadAvailabilityPage(currentSongName);
+                    } else {
+                        displayMessage(`指定された曲「${currentSongName}」はサークル「${currentUser.circleCode}」に存在しません。`, 'error', mainMessageArea);
+                        loadMainAppPage();
+                    }
+                } else {
+                    loadMainAppPage();
+                }
+            } else {
+                if (songParam && circleParam) {
+                    displayMessage("このコンテンツを表示するにはログインまたは登録が必要です。", "error", loginErrorArea);
+                    if(loginCircleCodeInput) loginCircleCodeInput.value = decodeURIComponent(circleParam);
+                    showPage(loginPage);
+                } else {
+                    showPage(registrationPage);
+                }
+            }
+             window.addEventListener('storage', (event) => {
+                if (currentUser && event.key === `scheduleAppCircle_${currentUser.circleCode}`) {
+                    currentCircleData = JSON.parse(event.newValue);
+                    if (availabilityInputPage.offsetParent !== null && currentSongName && currentCircleData.songs[currentSongName]) { 
+                         renderAvailabilityMatrix(currentSongName, currentUser.loginId, currentCircleData.songs[currentSongName].period);
+                    } else if (mainAppPage.offsetParent !== null) {
+                        renderSongList();
+                    }
+                } else if (event.key === 'scheduleAppUser' && !event.newValue) { 
+                    currentUser = null;
+                    currentCircleData = null;
+                    currentSongName = null;
+                    isConfirmMode = false;
+                    window.history.replaceState({}, document.title, APP_BASE_URL);
+                    showPage(registrationPage);
+                    menuDropdown.classList.remove('show');
+                    menuDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        registerBtn.onclick = () => {
+            const loginId = regLoginIdInput.value.trim();
+            const password = regPasswordInput.value;
+            const nickname = regNicknameInput.value.trim();
+            const circleCode = regCircleCodeInput.value.trim();
+
+            if (!loginId || !password || !nickname || !circleCode) {
+                displayMessage("すべての項目を入力してください。", "error", regErrorArea);
+                return;
+            }
+            const tempCircleData = getCircleDataFromStorage(circleCode);
+            if (tempCircleData.users && tempCircleData.users[loginId]) {
+                displayMessage("このログインIDはサークル内で既に使用されています。", "error", regErrorArea);
+                return;
+            }
+            currentUser = { loginId, password, nickname, circleCode };
+            saveUserInfoToStorage(currentUser);
+            currentCircleData = getCircleDataFromStorage(circleCode);
+            if (!currentCircleData.users) currentCircleData.users = {};
+            currentCircleData.users[loginId] = { nickname: nickname, password: password };
+            saveCircleDataToStorage(circleCode, currentCircleData);
+            clearForm(regLoginIdInput, regPasswordInput, regNicknameInput, regCircleCodeInput);
+            loadMainAppPage();
+        };
+
+        loginBtn.onclick = () => {
+            const loginId = loginIdInput.value.trim();
+            const password = loginPasswordInput.value;
+            const circleCode = loginCircleCodeInput.value.trim();
+            if (!loginId || !password || !circleCode) {
+                displayMessage("すべての項目を入力してください。", "error", loginErrorArea);
+                return;
+            }
+            const targetCircleData = getCircleDataFromStorage(circleCode);
+            if (!targetCircleData || !targetCircleData.users || !targetCircleData.users[loginId]) {
+                displayMessage("ログインIDまたはサークルコードが正しくないか、ユーザーが存在しません。", "error", loginErrorArea);
+                return;
+            }
+            if (!targetCircleData.users[loginId].password || targetCircleData.users[loginId].password !== password) {
+                displayMessage("パスワードが正しくありません。", "error", loginErrorArea);
+                return;
+            }
+            currentUser = { loginId, password, nickname: targetCircleData.users[loginId].nickname, circleCode };
+            saveUserInfoToStorage(currentUser);
+            currentCircleData = targetCircleData;
+            clearForm(loginIdInput, loginPasswordInput, loginCircleCodeInput);
+            const urlParams = new URLSearchParams(window.location.search);
+            const songParam = urlParams.get('song');
+            const circleParam = urlParams.get('circle');
+            if (songParam && circleParam && circleParam === currentUser.circleCode) {
+                currentSongName = decodeURIComponent(songParam);
+                 if (currentCircleData.songs && currentCircleData.songs[currentSongName]) {
+                    loadAvailabilityPage(currentSongName);
+                } else {
+                    displayMessage(`指定された曲「${currentSongName}」はサークル「${currentUser.circleCode}」に存在しません。`, 'error', mainMessageArea);
+                    loadMainAppPage();
+                }
+            } else {
+                loadMainAppPage();
+            }
+        };
+
+        showLoginPageBtn.onclick = () => showPage(loginPage);
+        showRegistrationPageBtn.onclick = () => showPage(registrationPage);
+
+        logoutBtn.onclick = () => {
+            localStorage.removeItem('scheduleAppUser');
+            currentUser = null; currentCircleData = null; currentSongName = null; isConfirmMode = false;
+            window.history.replaceState({}, document.title, APP_BASE_URL);
+            showPage(registrationPage);
+            menuDropdown.classList.remove('show');
+            menuDropdown.classList.add('hidden');
+        };
+
+        editUserInfoBtn.onclick = () => {
+            if (!currentUser) return;
+            editNicknameInput.value = currentUser.nickname;
+            editCircleCodeInput.value = currentUser.circleCode;
+            showModal(editUserInfoModal);
+            menuDropdown.classList.remove('show');
+            menuDropdown.classList.add('hidden');
+        };
+
+        saveUserInfoBtn.onclick = () => {
+            const newNickname = editNicknameInput.value.trim();
+            const newCircleCode = editCircleCodeInput.value.trim();
+            if (!newNickname || !newCircleCode) {
+                displayMessage("ニックネームとサークルコードは必須です。", "error", editUserInfoErrorArea);
+                return;
+            }
+            const oldCircleCode = currentUser.circleCode;
+            const loginId = currentUser.loginId;
+            currentUser.nickname = newNickname;
+            if (currentCircleData && currentCircleData.users && currentCircleData.users[loginId]) {
+                currentCircleData.users[loginId].nickname = newNickname;
+            }
+            if (newCircleCode !== oldCircleCode) {
+                const newCircleData = getCircleDataFromStorage(newCircleCode);
+                if (!newCircleData.users) newCircleData.users = {};
+                if (!newCircleData.users[loginId]) {
+                    newCircleData.users[loginId] = { nickname: newNickname, password: currentUser.password };
+                } else {
+                    newCircleData.users[loginId].nickname = newNickname;
+                }
+                saveCircleDataToStorage(newCircleCode, newCircleData);
+                currentUser.circleCode = newCircleCode;
+                currentCircleData = newCircleData;
+            } else {
+                if (currentCircleData) saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+            }
+            saveUserInfoToStorage(currentUser);
+            userNicknameDisplay.textContent = currentUser.nickname;
+            userCircleDisplay.textContent = currentUser.circleCode;
+            hideModal(editUserInfoModal);
+            displayMessage("ユーザー情報を更新しました。", "info", mainMessageArea);
+            renderSongList();
+        };
+
+        // Main App functions (logic largely same, calls displayMessage with target)
+        function loadMainAppPage() {
+            if (!currentUser) { showPage(registrationPage); return; }
+            userNicknameDisplay.textContent = currentUser.nickname;
+            userCircleDisplay.textContent = currentUser.circleCode;
+            showPage(mainAppPage);
+            renderSongList();
+            isConfirmMode = false;
+            // URLからクエリパラメータを削除
+            if (window.location.search) {
+                 const newUrl = window.location.pathname.endsWith('/') ? APP_BASE_URL : window.location.pathname;
+                 window.history.replaceState({}, document.title, newUrl);
+            }
+        }
+
+        createSongLinkBtn.onclick = () => {
+            const songName = songNameInput.value.trim();
+            const periodStart = practicePeriodStartInput.value;
+            const periodEnd = practicePeriodEndInput.value;
+            if (!songName || !periodStart || !periodEnd) {
+                displayMessage("すべての項目を入力してください。", "error", createSongErrorArea);
+                return;
+            }
+            if (new Date(periodStart) > new Date(periodEnd)) {
+                displayMessage("練習期間の終了日は開始日より後に設定してください。", "error", createSongErrorArea);
+                return;
+            }
+            if (!currentCircleData.songs) currentCircleData.songs = {};
+            if (currentCircleData.songs[songName]) {
+                displayMessage("同じ曲名が既に存在します。別の曲名を入力してください。", "error", createSongErrorArea);
+                return;
+            }
+            currentCircleData.songs[songName] = {
+                creator: currentUser.loginId,
+                period: { start: periodStart, end: periodEnd },
+                availability: {}, confirmedSlots: {}
+            };
+            saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+            const link = `${APP_BASE_URL}${APP_BASE_URL.endsWith('/') ? 'index.html' : (window.location.pathname.includes('index.html') ? '' : 'index.html')}?circle=${encodeURIComponent(currentUser.circleCode)}&song=${encodeURIComponent(songName)}`;
+            generatedLinkInput.value = link;
+            generatedLinkArea.classList.remove('hidden');
+            renderSongList();
+            // displayMessage("曲「" + songName + "」の日程調整を作成しました。", "info", createSongErrorArea); // リンク表示があるので不要かも
+        };
+        
+        copyLinkBtn.onclick = () => {
+            generatedLinkInput.select();
+            try {
+                navigator.clipboard.writeText(generatedLinkInput.value).then(() => {
+                    displayMessage("リンクをコピーしました！", "info", createSongErrorArea);
+                }).catch(err => {
+                     displayMessage("コピーに失敗しました: " + err, "error", createSongErrorArea);
+                });
+            } catch (err) { 
+                try {
+                    document.execCommand('copy');
+                    displayMessage("リンクをコピーしました！", "info", createSongErrorArea);
+                } catch (e) {
+                    displayMessage("コピーに失敗しました: " + e, "error", createSongErrorArea);
+                }
+            }
+        };
+
+        function renderSongList() {
+            if (!currentCircleData || !currentCircleData.songs || Object.keys(currentCircleData.songs).length === 0) {
+                songListDiv.innerHTML = "<p style='text-align:center; color: var(--text-muted-color);'>まだ日程調整中の曲はありません。</p>";
+                return;
+            }
+            const songs = currentCircleData.songs;
+            let html = "<ul>";
+            for (const songName in songs) {
+                const songData = songs[songName];
+                const link = `${APP_BASE_URL}${APP_BASE_URL.endsWith('/') ? 'index.html' : (window.location.pathname.includes('index.html') ? '' : 'index.html')}?circle=${encodeURIComponent(currentUser.circleCode)}&song=${encodeURIComponent(songName)}`;
+                html += `<li>
+                    <div>
+                        <strong>${songName}</strong> 
+                        <small>(作成者: ${currentCircleData.users[songData.creator]?.nickname || songData.creator})</small>
+                    </div>
+                    <small>期間: ${songData.period.start} ~ ${songData.period.end}</small>
+                    <div style="margin-top: calc(var(--spacing-unit)*0.5); display:flex; justify-content:space-between; align-items:center;">
+                        <a href="${link}">日程入力/確認ページへ</a>
+                        ${songData.creator === currentUser.loginId ? `<button data-song-name="${songName}" class="delete-song-btn danger">削除</button>` : ''}
+                    </div>
+                </li>`;
+            }
+            html += "</ul>";
+            songListDiv.innerHTML = html;
+            document.querySelectorAll('.delete-song-btn').forEach(button => {
+                button.onclick = (e) => {
+                    e.stopPropagation();
+                    const songToDelete = e.target.dataset.songName;
+                    if (confirm(`曲「${songToDelete}」を削除しますか？この操作は元に戻せません。`)) {
+                        delete currentCircleData.songs[songToDelete];
+                        saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+                        renderSongList();
+                        displayMessage(`曲「${songToDelete}」を削除しました。`, "info", mainMessageArea);
+                    }
+                };
+            });
+        }
+
+        backToSongListBtn.onclick = () => {
+            currentSongName = null; isConfirmMode = false;
+             if (window.location.search) {
+                 const newUrl = window.location.pathname.endsWith('/') ? APP_BASE_URL : window.location.pathname;
+                 window.history.replaceState({}, document.title, newUrl);
+            }
+            loadMainAppPage();
+        };
+
+        // Availability Page functions (logic largely same, calls displayMessage with target)
+        function loadAvailabilityPage(songName) {
+            if (!currentUser || !currentCircleData || !currentCircleData.songs || !currentCircleData.songs[songName]) {
+                displayMessage("指定された曲の情報が見つかりません。", "error", availabilityMessageArea);
+                loadMainAppPage(); return;
+            }
+            currentSongName = songName;
+            const songData = currentCircleData.songs[songName];
+            availabilitySongTitle.textContent = `曲: ${songName}`;
+            availabilityPeriod.textContent = `練習期間: ${songData.period.start} ～ ${songData.period.end}`;
+            isConfirmMode = false;
+            renderAvailabilityMatrix(songName, currentUser.loginId, songData.period);
+            if (songData.creator === currentUser.loginId) {
+                showConfirmScheduleBtn.classList.remove('hidden');
+                showConfirmScheduleBtn.textContent = "練習コマを確定モードへ";
+                showConfirmScheduleBtn.classList.remove('danger');
+                showConfirmScheduleBtn.classList.add('secondary');
+            } else {
+                showConfirmScheduleBtn.classList.add('hidden');
+            }
+            let userHasSaved = false;
+            if (songData.availability) {
+                for (const slotKey in songData.availability) {
+                    if (songData.availability[slotKey].includes(currentUser.loginId)) { userHasSaved = true; break; }
+                }
+            }
+            if (userHasSaved) {
+                saveAvailabilityBtn.classList.add('hidden');
+                editAvailabilityBtn.classList.remove('hidden');
+                setMatrixEditable(false);
+            } else {
+                saveAvailabilityBtn.classList.remove('hidden');
+                editAvailabilityBtn.classList.add('hidden');
+                setMatrixEditable(true);
+            }
+            availabilityMessageArea.classList.add('hidden');
+            availabilityMessageArea.textContent = '';
+            showPage(availabilityInputPage);
+        }
+
+        function setMatrixEditable(isEditable) {
+            availabilityTableBody.querySelectorAll('td[data-date][data-slot]').forEach(cell => {
+                if (!currentSongName || !currentCircleData.songs[currentSongName]) return;
+                const songData = currentCircleData.songs[currentSongName];
+                const date = cell.dataset.date;
+                const slot = cell.dataset.slot;
+                const isConfirmed = songData.confirmedSlots && songData.confirmedSlots[`${date}_${slot}`];
+                cell.style.cursor = (isEditable && !isConfirmed) ? 'pointer' : 'default';
+            });
+        }
+
+        editAvailabilityBtn.onclick = () => {
+            setMatrixEditable(true);
+            editAvailabilityBtn.classList.add('hidden');
+            saveAvailabilityBtn.classList.remove('hidden');
+            isConfirmMode = false;
+            showConfirmScheduleBtn.textContent = "練習コマを確定モードへ";
+            showConfirmScheduleBtn.classList.remove('danger');
+            showConfirmScheduleBtn.classList.add('secondary');
+        };
+
+        function getDatesInRange(startDateStr, endDateStr) {
+            const dates = [];
+            try {
+                let currentDate = new Date(startDateStr + 'T00:00:00Z');
+                const endDate = new Date(endDateStr + 'T00:00:00Z');
+                if (isNaN(currentDate.getTime()) || isNaN(endDate.getTime())) throw new Error("Invalid date");
+                while (currentDate <= endDate) {
+                    dates.push(new Date(currentDate));
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                }
+            } catch (e) {
+                displayMessage("練習期間の日付が無効です。", "error", availabilityMessageArea);
+                return [];
+            }
+            return dates;
+        }
+
+        function renderAvailabilityMatrix(songName, userId, period) {
+            if (!period || !period.start || !period.end) {
+                availabilityTableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:var(--spacing-unit);">練習期間が設定されていません。</td></tr>`;
+                return;
+            }
+            if (!currentCircleData.songs || !currentCircleData.songs[songName]) {
+                 availabilityTableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:var(--spacing-unit);">曲データが見つかりません。</td></tr>`;
+                 return;
+            }
+            const songData = currentCircleData.songs[songName];
+            const dates = getDatesInRange(period.start, period.end);
+            if (dates.length === 0 && period.start && period.end) { // Valid period but getDatesInRange failed
+                availabilityTableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:var(--spacing-unit);">練習期間の表示に失敗しました。日付を確認してください。</td></tr>`;
+                return;
+            } else if (dates.length === 0) {
+                availabilityTableBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:var(--spacing-unit);">練習期間が設定されていません。</td></tr>`;
+                return;
+            }
+
+            let headerHtml = '<th>時限</th>';
+            dates.forEach(date => {
+                headerHtml += `<th>${date.toLocaleDateString('ja-JP', { timeZone: 'UTC', month: 'short', day: 'numeric' })}<br>(${['日', '月', '火', '水', '木', '金', '土'][date.getUTCDay()]})</th>`;
+            });
+            availabilityTableHeader.innerHTML = headerHtml;
+            let bodyHtml = '';
+            TIME_SLOTS.forEach(timeSlot => {
+                bodyHtml += `<tr><th>${timeSlot}</th>`;
+                dates.forEach(date => {
+                    const dateString = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+                    const slotKey = `${dateString}_${timeSlot}`;
+                    const participants = (songData.availability && songData.availability[slotKey]) ? songData.availability[slotKey] : [];
+                    const participantCount = participants.length;
+                    const isCurrentUserAvailable = participants.includes(userId);
+                    const confirmedSlotInfo = (songData.confirmedSlots && songData.confirmedSlots[slotKey]) ? songData.confirmedSlots[slotKey] : null;
+                    let cellClass = '';
+                    let cellText = '';
+                    if (confirmedSlotInfo) {
+                        cellClass = 'confirmed-slot';
+                        cellText = `確定済 (${confirmedSlotInfo.participants.length}人)`;
+                        if (songData.creator === currentUser.loginId) { cellText += `<span class="slot-actions">(編集/解除)</span>`; }
+                    } else if (isCurrentUserAvailable) {
+                        cellClass = 'available-slot'; cellText = '参加';
+                    } else {
+                        cellClass = 'unavailable-slot'; cellText = '－';
+                    }
+                    bodyHtml += `<td class="${cellClass}" data-date="${dateString}" data-slot="${timeSlot}" onclick="handleSlotInteraction(this, '${dateString}', '${timeSlot}')">
+                                    <div>${cellText}</div>
+                                    <span class="participant-count">(${participantCount}人参加可)</span>
+                                    <span class="slot-actions participant-list-trigger" data-slot-key="${slotKey}" onclick="event.stopPropagation(); showParticipantListModalWrapper('${songName}', '${slotKey}');">参加者...</span>
+                                 </td>`;
+                });
+                bodyHtml += '</tr>';
+            });
+            availabilityTableBody.innerHTML = bodyHtml;
+        }
+
+        function showParticipantListModalWrapper(songName, slotKey) {
+            if (!currentCircleData.songs || !currentCircleData.songs[songName] || !currentCircleData.songs[songName].availability) {
+                 participantListUl.innerHTML = '<li>参加者情報を取得できませんでした。</li>';
+                 showModal(participantListModal);
+                 return;
+            }
+            const participants = currentCircleData.songs[songName].availability[slotKey] || [];
+            const [date, time] = slotKey.split('_');
+            participantListModalTitle.textContent = `${date} ${time} の参加可能な人 (${participants.length}名)`;
+            let listHtml = '';
+            if (participants.length > 0) {
+                participants.forEach(userId => {
+                    const userNick = (currentCircleData.users && currentCircleData.users[userId]) ? currentCircleData.users[userId].nickname : userId;
+                    listHtml += `<li>${userNick}</li>`;
+                });
+            } else {
+                listHtml = '<li>まだ参加可能な人はいません</li>';
+            }
+            participantListUl.innerHTML = listHtml;
+            showModal(participantListModal);
+        }
+
+        window.handleSlotInteraction = (cellElement, dateString, timeSlot) => {
+            if (!currentSongName || !currentCircleData.songs[currentSongName]) return;
+            const songData = currentCircleData.songs[currentSongName];
+            const isCreator = songData.creator === currentUser.loginId;
+            const slotKey = `${dateString}_${timeSlot}`;
+            const confirmedSlotInfo = (songData.confirmedSlots && songData.confirmedSlots[slotKey]) ? songData.confirmedSlots[slotKey] : null;
+            if (isConfirmMode && isCreator) {
+                handleConfirmSlotSelection(dateString, timeSlot, !!confirmedSlotInfo);
+            } else if (!confirmedSlotInfo && (saveAvailabilityBtn.offsetParent !== null || (editAvailabilityBtn.offsetParent === null && !isConfirmMode))) {
+                handleCellClick(cellElement, dateString, timeSlot);
+            } else if (isCreator && confirmedSlotInfo) { // Creator can always edit confirmed slots
+                 handleConfirmSlotSelection(dateString, timeSlot, true);
+            }
+        };
+
+        window.handleCellClick = (cellElement, date, timeSlot) => {
+            if (!currentSongName || !currentCircleData.songs[currentSongName]) return;
+            const songData = currentCircleData.songs[currentSongName];
+            if (!songData || (songData.confirmedSlots && songData.confirmedSlots[`${date}_${timeSlot}`])) return;
+            if (!songData.availability) songData.availability = {};
+            const slotKey = `${date}_${timeSlot}`;
+            if (!songData.availability[slotKey]) songData.availability[slotKey] = [];
+            const participants = songData.availability[slotKey];
+            const userIndex = participants.indexOf(currentUser.loginId);
+            const textDiv = cellElement.querySelector('div');
+            if (userIndex > -1) {
+                participants.splice(userIndex, 1);
+                cellElement.classList.remove('available-slot'); cellElement.classList.add('unavailable-slot');
+                if (textDiv) textDiv.textContent = '－';
+            } else {
+                participants.push(currentUser.loginId);
+                cellElement.classList.remove('unavailable-slot'); cellElement.classList.add('available-slot');
+                if (textDiv) textDiv.textContent = '参加';
+            }
+            cellElement.querySelector('.participant-count').textContent = `(${participants.length}人参加可)`;
+        };
+
+        saveAvailabilityBtn.onclick = () => {
+            saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+            displayMessage("空きコマ情報を保存しました。", "info", availabilityMessageArea);
+            saveAvailabilityBtn.classList.add('hidden');
+            editAvailabilityBtn.classList.remove('hidden');
+            setMatrixEditable(false);
+            if(currentSongName && currentCircleData.songs[currentSongName]) {
+                renderAvailabilityMatrix(currentSongName, currentUser.loginId, currentCircleData.songs[currentSongName].period);
+            }
+        };
+
+        // Schedule Confirmation functions (logic largely same, calls displayMessage with target)
+        showConfirmScheduleBtn.onclick = () => {
+            isConfirmMode = !isConfirmMode;
+            if (isConfirmMode) {
+                displayMessage("確定モード: 表のセルをクリックして練習コマを選択/編集してください。", "info", availabilityMessageArea);
+                showConfirmScheduleBtn.textContent = "通常モードに戻る";
+                showConfirmScheduleBtn.classList.add('danger'); showConfirmScheduleBtn.classList.remove('secondary');
+                saveAvailabilityBtn.classList.add('hidden'); editAvailabilityBtn.classList.add('hidden');
+            } else {
+                displayMessage("通常モード: 空きコマを入力/編集してください。", "info", availabilityMessageArea);
+                showConfirmScheduleBtn.textContent = "練習コマを確定モードへ";
+                showConfirmScheduleBtn.classList.remove('danger'); showConfirmScheduleBtn.classList.add('secondary');
+                let userHasSaved = false;
+                const songData = currentCircleData.songs[currentSongName];
+                if (songData && songData.availability) {
+                    for (const slotKey in songData.availability) {
+                        if (songData.availability[slotKey].includes(currentUser.loginId)) { userHasSaved = true; break; }
+                    }
+                }
+                if (userHasSaved) editAvailabilityBtn.classList.remove('hidden');
+                else saveAvailabilityBtn.classList.remove('hidden');
+            }
+            setMatrixEditable(!isConfirmMode);
+            if(currentSongName && currentCircleData.songs[currentSongName]){
+                renderAvailabilityMatrix(currentSongName, currentUser.loginId, currentCircleData.songs[currentSongName].period);
+            }
+        };
+
+        window.handleConfirmSlotSelection = (date, timeSlot, isEditingExisting) => {
+            currentSlotToConfirm = { date, timeSlot };
+            if (!currentSongName || !currentCircleData.songs[currentSongName]) return;
+            const songData = currentCircleData.songs[currentSongName];
+            const slotKey = `${date}_${timeSlot}`;
+            confirmSlotDatetime.textContent = `${date} ${timeSlot}`;
+            confirmationWarningsDiv.classList.add('hidden'); confirmationWarningsDiv.innerHTML = '';
+            confirmScheduleMessageArea.classList.add('hidden'); confirmScheduleMessageArea.textContent = '';
+
+            let equipmentHtml = '';
+            const existingEquipment = (isEditingExisting && songData.confirmedSlots && songData.confirmedSlots[slotKey]) ? songData.confirmedSlots[slotKey].equipment : [];
+            EQUIPMENT_LIST.forEach(equip => {
+                const checked = existingEquipment.includes(equip) ? 'checked' : '';
+                equipmentHtml += `<label><input type="checkbox" name="equipment" value="${equip}" ${checked}> ${equip}</label>`;
+            });
+            equipmentSelectionDiv.innerHTML = equipmentHtml;
+            if (isEditingExisting) {
+                confirmScheduleModalTitle.textContent = "練習コマの編集/解除";
+                unconfirmScheduleActionBtn.classList.remove('hidden');
+                confirmScheduleActionBtn.textContent = "変更を保存";
+            } else {
+                confirmScheduleModalTitle.textContent = "練習コマを確定";
+                unconfirmScheduleActionBtn.classList.add('hidden');
+                confirmScheduleActionBtn.textContent = "このコマを練習日に確定";
+            }
+            showModal(confirmScheduleModal);
+        };
+
+        unconfirmScheduleActionBtn.onclick = () => {
+            if (!currentSlotToConfirm || !currentSongName || !currentCircleData.songs[currentSongName]) return;
+            const { date, timeSlot } = currentSlotToConfirm;
+            const slotKey = `${date}_${timeSlot}`;
+            const songData = currentCircleData.songs[currentSongName];
+            if (songData && songData.confirmedSlots && songData.confirmedSlots[slotKey]) {
+                delete songData.confirmedSlots[slotKey];
+                saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+                if(songData){ renderAvailabilityMatrix(currentSongName, currentUser.loginId, songData.period); }
+                displayMessage("練習コマの確定を解除しました。", "info", availabilityMessageArea);
+                hideModal(confirmScheduleModal);
+                currentSlotToConfirm = null;
+            }
+        };
+
+        confirmScheduleActionBtn.onclick = () => {
+            if (!currentSlotToConfirm || !currentSongName || !currentCircleData.songs[currentSongName]) return;
+            const { date, timeSlot } = currentSlotToConfirm;
+            const slotKey = `${date}_${timeSlot}`;
+            const songData = currentCircleData.songs[currentSongName];
+            const selectedEquipment = Array.from(equipmentSelectionDiv.querySelectorAll('input[name="equipment"]:checked')).map(cb => cb.value);
+            const participantsForSlot = (songData.availability && songData.availability[slotKey]) ? songData.availability[slotKey] : [];
+            const existingConfirmedParticipants = (songData.confirmedSlots && songData.confirmedSlots[slotKey]) ? songData.confirmedSlots[slotKey].participants : [];
+
+            if (participantsForSlot.length === 0 && existingConfirmedParticipants.length === 0) {
+                if (!confirm("このコマには現在参加可能な人がいません。それでも確定/更新しますか？")) return;
+            }
+            let equipmentWarnings = [];
+            selectedEquipment.forEach(equip => {
+                let totalUsageAfterConfirm = 0; let songsUsingEquipment = new Set();
+                for (const s_name in currentCircleData.songs) {
+                    const otherSong = currentCircleData.songs[s_name]; if(!otherSong) continue;
+                    let songEquipmentInSlot = [];
+                    if (s_name === currentSongName) { songEquipmentInSlot = selectedEquipment; }
+                    else if (otherSong.confirmedSlots && otherSong.confirmedSlots[slotKey]) { songEquipmentInSlot = otherSong.confirmedSlots[slotKey].equipment; }
+                    if (songEquipmentInSlot.includes(equip)) { totalUsageAfterConfirm++; songsUsingEquipment.add(s_name); }
+                }
+                if (totalUsageAfterConfirm > EQUIPMENT_STOCK_LIMIT) {
+                    equipmentWarnings.push(`${equip}の在庫が不足しています。(最大${EQUIPMENT_STOCK_LIMIT}台に対し ${totalUsageAfterConfirm}台使用予定)。${Array.from(songsUsingEquipment).map(s => `『${s}』`).join('と')}が使用予定です。`);
+                }
+            });
+            let overlapWarnings = [];
+            participantsForSlot.forEach(participantId => {
+                let overlappingSongs = [];
+                for (const sName in currentCircleData.songs) {
+                    if (sName === currentSongName) continue;
+                    const otherSongData = currentCircleData.songs[sName];
+                    if (otherSongData && otherSongData.confirmedSlots && otherSongData.confirmedSlots[slotKey] && otherSongData.confirmedSlots[slotKey].participants.includes(participantId)) {
+                        overlappingSongs.push(sName);
+                    }
+                }
+                if (overlappingSongs.length > 0) {
+                    const participantNick = (currentCircleData.users && currentCircleData.users[participantId]) ? currentCircleData.users[participantId].nickname : participantId;
+                    overlapWarnings.push(`${participantNick}さんは『${currentSongName}』と『${overlappingSongs.join(', ')}』で練習が重複しています。`);
+                }
+            });
+            confirmationWarningsDiv.innerHTML = ''; let hasWarnings = false;
+            if (equipmentWarnings.length > 0) {
+                confirmationWarningsDiv.innerHTML += "<strong>機材在庫の問題:</strong><ul>" + equipmentWarnings.map(w => `<li>${w}</li>`).join('') + "</ul>";
+                hasWarnings = true;
+            }
+            if (overlapWarnings.length > 0) {
+                confirmationWarningsDiv.innerHTML += "<strong>練習重複の問題:</strong><ul>" + overlapWarnings.map(w => `<li>${w}</li>`).join('') + "</ul>";
+                hasWarnings = true;
+            }
+            if(hasWarnings){
+                confirmationWarningsDiv.classList.remove('hidden');
+                if (!confirm("警告があります。それでもこのコマを練習日として確定/更新しますか？")) return;
+            } else {
+                confirmationWarningsDiv.classList.add('hidden');
+            }
+            if(!songData.confirmedSlots) songData.confirmedSlots = {};
+            songData.confirmedSlots[slotKey] = { equipment: selectedEquipment, participants: participantsForSlot };
+            saveCircleDataToStorage(currentUser.circleCode, currentCircleData);
+            if(songData) { renderAvailabilityMatrix(currentSongName, currentUser.loginId, songData.period); }
+            displayMessage("練習コマを確定/更新しました。", "info", availabilityMessageArea);
+            hideModal(confirmScheduleModal);
+            currentSlotToConfirm = null;
+        };
+
+        window.onload = handleInitialLoad;
+    </script>
+</body>
+</html>
