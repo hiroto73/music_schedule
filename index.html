@@ -1022,16 +1022,7 @@
                         showParticipantsModal(menuBtn.dataset.cellId);
                     } else if (cell && !cell.classList.contains('disabled')) {
                         // 空きコマ選択/解除
-                        const isConfirmMode = document.getElementById('confirmation-controls').style.display === 'block' &&
-                                          document.querySelector('.action-buttons').style.display === 'none';
-
-                        if(isConfirmMode) {
-                            // 練習コマ確定モード
-                             cell.classList.toggle('confirm-selected');
-                        } else {
-                            // 通常の空きコマ入力モード
-                            cell.classList.toggle('selected');
-                        }
+                        cell.classList.toggle('selected');
                     }
                 });
                 
@@ -1056,6 +1047,11 @@
                 }
 
                 // 練習コマ確定関連
+                document.getElementById('show-confirmation-screen-btn').addEventListener('click', () => {
+                    // 確定モードでは、通常の空きコマ選択（selectedクラスの付け外し）と区別したい
+                    // ここではシンプルに、グリッドのクリックイベントで 'confirm-selected' を付け外しする前提
+                    alert('確定したいコマをクリックで選択してください。選択後、再度「選択したコマを確定する」ボタンを押してください。');
+                });
                 document.getElementById('show-confirmation-screen-btn').addEventListener('click', showConfirmationScreen);
                 document.getElementById('finalize-confirmation-btn').addEventListener('click', finalizeConfirmation);
             }
@@ -1212,15 +1208,22 @@
                 dataManager.setSong(song);
                 
                 alert('空きコマを保存しました。');
-                generateScheduleGrid(song); // 参加人数を更新して再描画
+                
+                // ★★★ 修正点 ★★★
+                // 画面全体を再描画して、参加者人数の更新を確実に反映させる
+                showScheduleInputScreen();
             }
 
             function showConfirmationScreen() {
-                state.confirmingSlots = Array.from(document.querySelectorAll('.grid-cell.confirm-selected'))
+                // .confirm-selectedクラスを一旦クリア
+                document.querySelectorAll('.grid-cell.confirm-selected').forEach(c => c.classList.remove('confirm-selected'));
+
+                // ユーザーが選択したコマを取得
+                state.confirmingSlots = Array.from(document.querySelectorAll('.grid-cell.selected:not(.disabled)'))
                     .map(c => c.dataset.cellId);
                 
                 if (state.confirmingSlots.length === 0) {
-                    alert('確定するコマを1つ以上選択してください。');
+                    alert('確定するコマを1つ以上選択してください。（緑色に選択されているコマが対象です）');
                     return;
                 }
 
@@ -1321,10 +1324,11 @@
             }
 
             function formatDate(date) {
-                const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000)); // JSTに補正
-                const month = jstDate.getUTCMonth() + 1;
-                const day = jstDate.getUTCDate();
-                const dayOfWeek = ['日','月','火','水','木','金','土'][jstDate.getUTCDay()];
+                // UTC日付として扱うことでタイムゾーン問題を回避
+                const year = date.getUTCFullYear();
+                const month = date.getUTCMonth() + 1;
+                const day = date.getUTCDate();
+                const dayOfWeek = ['日','月','火','水','木','金','土'][date.getUTCDay()];
                 return `${month}/${day}(${dayOfWeek})`;
             }
 
@@ -1356,13 +1360,13 @@
                     allSongs.forEach(song => {
                         if (!song.confirmed) return;
                         song.confirmed.forEach(existingPractice => {
+                            if (song.id === currentSongId && arePracticesSame(newPractice, existingPractice)) {
+                                 return;
+                            }
                             const isSameDay = existingPractice.date === newPractice.date;
                             const hasTimeOverlap = existingPractice.periods.some(p => newPractice.periods.includes(p));
 
                             if (isSameDay && hasTimeOverlap && existingPractice.participants.includes(participant)) {
-                                if (song.id === currentSongId && arePracticesSame(newPractice, existingPractice)) {
-                                     return;
-                                }
                                 overlaps.push({ user: participant, song: song.songTitle });
                             }
                         });
@@ -1374,7 +1378,7 @@
             }
             
             function arePracticesSame(p1, p2) {
-                return p1.date === p2.date && p1.room === p2.room && JSON.stringify(p1.periods) === JSON.stringify(p2.periods);
+                return p1.date === p2.date && p1.room === p2.room && JSON.stringify(p1.periods.sort()) === JSON.stringify(p2.periods.sort());
             }
 
             function checkEquipmentStock(newPractice, allSongs, currentSongId) {
